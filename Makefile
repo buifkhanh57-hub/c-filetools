@@ -1,20 +1,28 @@
-CC := cc
-CFLAGS := -O2 -Wall -Wextra -std=c11
-BUILD := build
-TARGET := $(BUILD)/wc
+CC       ?= cc
+CFLAGS   ?= -O2
+STD       = -std=c11
+WARN      = -Wall -Wextra
+# -std=c11 is strict ISO C; diskdive deliberately uses the POSIX.1-2008
+# API surface (lstat, opendir, realpath, localtime_r, ...), so the
+# feature-test macro is part of the build contract, not optional.
+CPPFLAGS += -D_XOPEN_SOURCE=700 -Isrc
 
-all: $(TARGET)
+SRC = $(wildcard src/*.c)
+OBJ = $(SRC:.c=.o)
+BIN = diskdive
 
-$(TARGET): src/wc.c | $(BUILD)
-	$(CC) $(CFLAGS) $< -o $@
+.PHONY: all test clean
 
-$(BUILD):
-	mkdir -p $(BUILD)
+all: $(BIN)
 
-run: $(TARGET)
-	./$(TARGET) src/wc.c
+$(BIN): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $(OBJ)
+
+src/%.o: src/%.c
+	$(CC) $(STD) $(WARN) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+
+test: $(BIN)
+	./tests/run_tests.sh
 
 clean:
-	rm -rf $(BUILD)
-
-.PHONY: all run clean
+	rm -f $(OBJ) $(BIN)

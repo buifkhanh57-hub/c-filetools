@@ -1,0 +1,5 @@
+diskdive
+*.o
+*.d
+/report.json
+/report.txt
